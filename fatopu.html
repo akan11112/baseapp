@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base MiniApp 🚀</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
+      background: #f0f2f5;
+    }
+    h1 { color: #0052ff; }
+    input, button {
+      padding: 10px;
+      margin: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #0052ff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background-color: #003ccc; }
+    .box {
+      background: white;
+      display: inline-block;
+      padding: 20px 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>💎 Base MiniApp</h1>
+    <p id="network">Ağ: —</p>
+    <button onclick="connectWallet()">🔗 Cüzdan Bağla</button>
+
+    <h3>Mevcut Mesaj:</h3>
+    <p id="currentMessage">Henüz yüklenmedi...</p>
+    <button onclick="fetchMessage()">📥 Mesajı Getir</button>
+
+    <h3>Yeni Mesaj Gönder:</h3>
+    <input id="newMessage" placeholder="Yeni mesaj yaz">
+    <button onclick="updateMessage()">🚀 Güncelle</button>
+  </div>
+
+  <script>
+    // --- Base Sepolia Testnet Ayarları ---
+    const CONTRACT_ADDRESS = "0xYOUR_CONTRACT_ADDRESS"; // <--- kendi adresinle değiştir
+    const CONTRACT_ABI = [
+      {
+        "inputs": [],
+        "name": "message",
+        "outputs": [{"internalType": "string","name": "","type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [{"internalType": "string","name": "newMessage","type": "string"}],
+        "name": "setMessage",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    let provider, signer, contract;
+
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert("MetaMask gerekli!");
+        return;
+      }
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      const network = await provider.getNetwork();
+      document.getElementById("network").innerText = `Ağ: ${network.name} (${network.chainId})`;
+
+      contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      alert("Cüzdan bağlandı ✅");
+    }
+
+    async function fetchMessage() {
+      if (!contract) return alert("Önce cüzdan bağla!");
+      const message = await contract.message();
+      document.getElementById("currentMessage").innerText = message;
+    }
+
+    async function updateMessage() {
+      if (!contract) return alert("Önce cüzdan bağla!");
+      const newMessage = document.getElementById("newMessage").value;
+      if (!newMessage) return alert("Bir mesaj gir!");
+      const tx = await contract.setMessage(newMessage);
+      await tx.wait();
+      fetchMessage();
+      alert("Mesaj güncellendi!");
+    }
+  </script>
+</body>
+</html>
